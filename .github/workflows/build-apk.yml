@@ -1,0 +1,59 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Unzip project (if BubbleWidgets.zip was uploaded instead of extracted)
+        run: |
+          if [ -f "BubbleWidgets.zip" ]; then
+            unzip -q BubbleWidgets.zip -d _extracted
+            if [ -d "_extracted/BubbleWidgets" ]; then
+              shopt -s dotglob
+              mv _extracted/BubbleWidgets/* .
+            else
+              shopt -s dotglob
+              mv _extracted/* .
+            fi
+            rm -rf _extracted BubbleWidgets.zip
+          fi
+
+      - name: Build debug APK
+        run: gradle assembleDebug --no-daemon
+
+      - name: Upload APK as build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bubble-widgets-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Publish to a rolling "latest" release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest build
+          body: Automatically built from the latest push to main.
+          files: app/build/outputs/apk/debug/app-debug.apk
+          prerelease: true
