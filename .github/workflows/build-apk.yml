@@ -24,16 +24,27 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.7'
+          gradle-version: '8.11.1'
+
+      - name: Ensure Android SDK platform 36 is installed
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -f "$SDKMANAGER" ]; then
+            SDKMANAGER=$(find "$ANDROID_HOME" -name sdkmanager -type f | head -n1)
+          fi
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0"
 
       - name: Unzip project (if BubbleWidgets.zip was uploaded instead of extracted)
         run: |
           if [ -f "BubbleWidgets.zip" ]; then
-            unzip -oq BubbleWidgets.zip -d _extracted
+            unzip -q BubbleWidgets.zip -d _extracted
             if [ -d "_extracted/BubbleWidgets" ]; then
-              cp -a _extracted/BubbleWidgets/. .
+              shopt -s dotglob
+              mv _extracted/BubbleWidgets/* .
             else
-              cp -a _extracted/. .
+              shopt -s dotglob
+              mv _extracted/* .
             fi
             rm -rf _extracted BubbleWidgets.zip
           fi
