@@ -40,11 +40,9 @@ jobs:
           if [ -f "BubbleWidgets.zip" ]; then
             unzip -q BubbleWidgets.zip -d _extracted
             if [ -d "_extracted/BubbleWidgets" ]; then
-              shopt -s dotglob
-              mv _extracted/BubbleWidgets/* .
+              cp -a _extracted/BubbleWidgets/. .
             else
-              shopt -s dotglob
-              mv _extracted/* .
+              cp -a _extracted/. .
             fi
             rm -rf _extracted BubbleWidgets.zip
           fi
